@@ -1,0 +1,71 @@
+services:
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    ports:
+      - 3000:3000
+    depends_on:
+      - auth
+    env_file:
+      - ./api-gateway/.env
+    develop:
+      watch:
+        - path: ./api-gateway/
+          target: /app/
+          action: sync
+        - path: ./api-gateway/package.json
+          action: rebuild
+  auth:
+    build:
+      context: ./auth
+      dockerfile: Dockerfile
+    container_name: auth
+    depends_on:
+      - mongodb-auth
+    env_file:
+      - ./auth/.env
+    develop:
+      watch:
+        - path: ./auth/
+          target: /app/
+          action: sync
+        - path: ./auth/package.json
+          action: rebuild
+  mongodb-auth:
+    image: mongo:latest
+    container_name: mongodb-auth
+    restart: always
+    volumes:
+      - mongo-auth:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    ports:
+      - 27017:27017
+  products:
+    build:
+      context: ./products
+      dockerfile: Dockerfile
+    container_name: products
+    depends_on:
+      - mongo-database-products
+    env_file:
+      - ./products/.env
+
+  mongo-database-products:
+    image: mongo:latest
+    container_name: mongo-database-products
+    restart: always
+    ports:
+      - 27019:27017
+    volumes:
+      - mongo-products-volume:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+
+volumes:
+  mongo-auth:
+  mongo-products-volume:
